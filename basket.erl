@@ -10,10 +10,19 @@ examine(Pid) ->
         {Pid, Items} -> Items
     end.
 
+add(Pid, Item) ->
+    Pid ! {self(), add, Item},
+    receive
+        {Pid, ok} -> done
+                    end.
+
 loop(State) ->
     receive
         {From, examine} -> 
             From ! {self(), State},
-            loop(State)
+            loop(State);
+        {From, add, Item} ->
+            From ! {self(), ok},
+            loop([Item|State])
     end.
 
