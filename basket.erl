@@ -14,7 +14,14 @@ add(Pid, Item) ->
     Pid ! {self(), add, Item},
     receive
         {Pid, ok} -> done
-                    end.
+    end.
+
+remove(Pid, Item) ->
+    Pid ! {self(), remove, Item},
+    receive
+        {Pid, ok} -> done;
+        {Pid, not_found} -> not_found
+    end.
 
 loop(State) ->
     receive
@@ -23,6 +30,15 @@ loop(State) ->
             loop(State);
         {From, add, Item} ->
             From ! {self(), ok},
-            loop([Item|State])
+            loop([Item|State]);
+        {From, remove, Item} ->
+            case lists:member(Item, State) of
+                true ->
+                    From ! {self(), ok},
+                    loop(lists:delete(Item, State));
+                false ->
+                    From ! {self(), not_found},
+                    loop(State)
+            end
     end.
 
