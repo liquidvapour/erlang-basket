@@ -7,7 +7,7 @@ start(InitialItems) ->
 examine(Pid) ->
     Pid ! {self(), examine},
     receive
-        {Pid, Items} -> Items
+        {Pid, Items, Version} -> [Items, Version]
     end.
 
 add(Pid, Item) ->
@@ -23,10 +23,16 @@ remove(Pid, Item) ->
         {Pid, not_found} -> not_found
     end.
 
+upgrade(Pid) ->
+    Pid ! {self(), upgrade},
+    receive
+        {Pid, ok} -> done
+    end.
+
 loop(State) ->
     receive
         {From, examine} -> 
-            From ! {self(), State},
+            From ! {self(), State, "v0.2"},
             loop(State);
         {From, add, Item} ->
             From ! {self(), ok},
@@ -39,6 +45,9 @@ loop(State) ->
                 false ->
                     From ! {self(), not_found},
                     loop(State)
-            end
+            end;
+        {From, upgrade} ->
+            From ! {self(), ok},
+            ?MODULE:loop(State)
     end.
 
